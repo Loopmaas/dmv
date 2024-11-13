@@ -1,6 +1,7 @@
 package dmv
 
 import (
+	"strings"
 	"time"
 
 	"github.com/hexcraft-biz/xtime"
@@ -15,12 +16,16 @@ type LicenseSuspension struct {
 
 type LicenseSuspensions []*LicenseSuspension
 
-func (rs LicenseSuspensions) IsLoopThresholdPassed(now xtime.Time) bool {
+func (rs LicenseSuspensions) IsLoopThresholdPassed(now xtime.Time, hasDUI *bool) bool {
 	if len(rs) <= 0 {
 		return true
 	}
 
 	for _, r := range rs {
+		if strings.Contains(r.Status, "酒駕") {
+			*hasDUI = true
+		}
+
 		if r.VehicleType == "汽車" && r.EndDate.After(now) {
 			return false
 		}
@@ -41,7 +46,7 @@ type Penalty struct {
 
 type Penalties []*Penalty
 
-func (rs Penalties) IsLoopThresholdPassed(now xtime.Time) bool {
+func (rs Penalties) IsLoopThresholdPassed(now xtime.Time, hasDUI *bool) bool {
 	if len(rs) <= 0 {
 		return true
 	}
@@ -50,6 +55,10 @@ func (rs Penalties) IsLoopThresholdPassed(now xtime.Time) bool {
 	points := 0
 
 	for _, r := range rs {
+		if strings.Contains(r.Cause, "酒駕") {
+			*hasDUI = true
+		}
+
 		if r.ViolationDate.After(halfYearAgo) {
 			points += r.Points
 		}
